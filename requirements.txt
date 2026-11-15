@@ -1,0 +1,5 @@
+Flask>=3.0
+# Tự resize/compress ảnh card sang WebP để trang tải nhanh hơn.
+Pillow>=10
+# Tùy chọn: chỉ cần khi chạy `python app.py --https` (để cảm biến hoạt động trên điện thoại qua mạng LAN)
+# cryptography>=42
