@@ -3,3 +3,4 @@ Flask>=3.0
 Pillow>=10
 # Tùy chọn: chỉ cần khi chạy `python app.py --https` (để cảm biến hoạt động trên điện thoại qua mạng LAN)
 # cryptography>=42
+gunicorn 
