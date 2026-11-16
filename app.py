@@ -6,9 +6,15 @@ Chạy:
 
 Ảnh card: đặt front.png / back.png (hoặc .webp / .jpg) vào static/images/.
 PNG có nền trong suốt sẽ giữ nguyên hình dáng viền (ví dụ răng cưa của tem).
+Ảnh được tự resize (tối đa 1600 px) và nén sang WebP khi phục vụ, có cache
+trong instance/image-cache/. Cần Pillow (`pip install -r requirements.txt`).
 """
 import argparse
 import io
+import os
+import threading
+import time
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 
@@ -29,6 +35,69 @@ EXTENSIONS = ("png", "webp", "jpg", "jpeg")
 MAX_IMAGE_EDGE = 1600
 WEBP_QUALITY = 90
 
+# Trần an toàn: ảnh quá lớn sẽ được phục vụ nguyên bản thay vì decode
+# (decode ảnh PNG cực lớn có thể vượt giới hạn RAM của instance).
+MAX_OPTIMIZE_PIXELS = 30_000_000
+
+# Flask dev server chạy đa luồng: 2 request ảnh giống nhau (img + CSS mask)
+# có thể cùng decode một ảnh lớn. Xếp hàng để mỗi lúc chỉ có 1 ảnh được xử lý.
+_IMAGE_LOCK = threading.Lock()
+_LOCK_FILE = ".convert.lock"
+
+
+class ImageTooLarge(Exception):
+    pass
+
+
+def _lock_handle(handle):
+    """Khóa file liên tiến trình (Windows: msvcrt, POSIX: fcntl)."""
+    if os.name == "nt":
+        import msvcrt
+
+        while True:
+            try:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                return
+            except OSError:
+                time.sleep(0.05)
+    else:
+        import fcntl
+
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+
+
+def _unlock_handle(handle):
+    if os.name == "nt":
+        import msvcrt
+
+        try:
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+    else:
+        import fcntl
+
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+@contextmanager
+def conversion_lock():
+    """Chỉ một ảnh được convert tại một thời điểm, kể cả nhiều process."""
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    lock_path = CACHE_DIR / _LOCK_FILE
+    with _IMAGE_LOCK:
+        with open(lock_path, "a+b") as handle:
+            if handle.seek(0, os.SEEK_END) == 0:
+                handle.write(b"\0")
+                handle.flush()
+            _lock_handle(handle)
+            try:
+                yield
+            finally:
+                _unlock_handle(handle)
+
 
 def find_source(name):
     """Trả về Path của ảnh đầu tiên tồn tại (ưu tiên png), hoặc None."""
@@ -39,8 +108,11 @@ def find_source(name):
     return None
 
 
-def has_alpha(img):
-    return img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
+def has_transparency(img):
+    """True nếu ảnh thực sự có pixel trong suốt (không chỉ là mode RGBA)."""
+    if img.mode in ("RGBA", "LA"):
+        return img.getchannel("A").getextrema()[0] < 255
+    return img.mode == "P" and "transparency" in img.info
 
 
 @lru_cache(maxsize=8)
@@ -53,24 +125,40 @@ def optimized_image(path_str, mtime_ns):
     if cache_path.is_file():
         return cache_path.read_bytes()
 
-    with Image.open(path) as img:
-        img = ImageOps.exif_transpose(img)
-        if max(img.size) > MAX_IMAGE_EDGE:
-            img.thumbnail((MAX_IMAGE_EDGE, MAX_IMAGE_EDGE), Image.Resampling.LANCZOS)
-        if not has_alpha(img):
-            img = img.convert("RGB")
-        buffer = io.BytesIO()
-        img.save(buffer, "WEBP", quality=WEBP_QUALITY, method=6)
-    data = buffer.getvalue()
+    with conversion_lock():
+        # Request/process khác có thể đã tạo xong file trong lúc ta chờ lock.
+        if cache_path.is_file():
+            return cache_path.read_bytes()
 
-    cache_path.write_bytes(data)
-    for old in CACHE_DIR.glob(f"{path.stem}-*.webp"):
-        if old != cache_path:
-            try:
-                old.unlink()
-            except OSError:
-                pass
-    return data
+        with Image.open(path) as img:
+            if img.width * img.height > MAX_OPTIMIZE_PIXELS:
+                raise ImageTooLarge
+
+            # JPEG có thể decode thẳng ở kích thước nhỏ hơn -> tiết kiệm RAM.
+            if img.format == "JPEG":
+                img.draft("RGB", (MAX_IMAGE_EDGE, MAX_IMAGE_EDGE))
+
+            # in_place tránh copy toàn bộ ảnh (tiết kiệm ~100MB với ảnh lớn).
+            img = ImageOps.exif_transpose(img, in_place=True) or img
+            if max(img.size) > MAX_IMAGE_EDGE:
+                img.thumbnail((MAX_IMAGE_EDGE, MAX_IMAGE_EDGE), Image.Resampling.LANCZOS)
+            if not has_transparency(img):
+                img = img.convert("RGB")
+            buffer = io.BytesIO()
+            img.save(buffer, "WEBP", quality=WEBP_QUALITY, method=6)
+        data = buffer.getvalue()
+
+        # Ghi file tạm rồi đổi tên: không ai đọc phải file cache đang ghi dở.
+        tmp_path = cache_path.with_name(cache_path.name + ".tmp")
+        tmp_path.write_bytes(data)
+        os.replace(tmp_path, cache_path)
+        for old in CACHE_DIR.glob(f"{path.stem}-*.webp"):
+            if old != cache_path:
+                try:
+                    old.unlink()
+                except OSError:
+                    pass
+        return data
 
 
 def find_image(name):
@@ -96,6 +184,9 @@ def media(name):
     mtime_ns = source.stat().st_mtime_ns
     try:
         data = optimized_image(str(source), mtime_ns)
+    except ImageTooLarge:
+        # Ảnh quá lớn để decode an toàn trong RAM -> trả file gốc.
+        return send_file(source)
     except Exception:
         # Ảnh lỗi/định dạng lạ: vẫn phục vụ file gốc.
         return send_file(source)
