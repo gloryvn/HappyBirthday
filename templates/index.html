@@ -1,66 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#06070b">
-  <title>Photocard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-  <main class="stage" id="stage">
-    <div class="aura" id="aura" aria-hidden="true"></div>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Happy Birthday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/css/style.css"></head><body>
+<div id="stars"></div><canvas id="fx"></canvas>
+<button id="snd" aria-label="Music on/off">🔊</button>
 
-    <div class="scene">
-      <div class="shadow" id="shadow" aria-hidden="true"></div>
+<section id="s1" class="stage on"><div class="fls"></div>
+ <h1 id="t1" class="script"></h1>
+ <div class="gift" id="gift"><i class="glow"></i><b class="box"></b><b class="lid"></b></div>
+ <p id="t2" class="script sub">I have something special for you!</p>
+ <button id="openBtn" class="btn">Open Your Surprise</button>
+</section>
 
-      <div class="card" id="card" role="img" aria-label="Photocard. Drag to rotate, double click to reset.">
-        <i class="edge edge--top"></i>
-        <i class="edge edge--bottom"></i>
-        <i class="edge edge--left"></i>
-        <i class="edge edge--right"></i>
+<section id="s2" class="stage">
+ <h2 class="script big">Happy Birthday!</h2>
+ <p>Make a wish and tap the cake!</p>
+ <div class="hint" id="hint"><span>TAP HERE</span><b>⬇</b></div>
+ <div id="cakeWrap"><div id="cake" role="button" tabindex="0" aria-label="Tap the cake">
+  <svg viewBox="0 10 220 220" xmlns="http://www.w3.org/2000/svg">
+   <ellipse cx="110" cy="212" rx="104" ry="14" fill="#fff" stroke="#e6c27a" stroke-width="3"/>
+   <rect x="20" y="150" width="180" height="60" rx="14" fill="#ffb8cc"/>
+   <rect x="45" y="100" width="130" height="52" rx="12" fill="#ffe6cf"/>
+   <rect x="70" y="56" width="80" height="44" rx="11" fill="#ff9fba"/>
+   <g id="deco"></g>
+   <g fill="#fff"><rect x="89" y="34" width="6" height="22" rx="2"/><rect x="107" y="34" width="6" height="22" rx="2"/><rect x="125" y="34" width="6" height="22" rx="2"/></g>
+   <g fill="#ffd84d"><ellipse class="flame" cx="92" cy="27" rx="4.5" ry="8"/><ellipse class="flame" cx="110" cy="27" rx="4.5" ry="8"/><ellipse class="flame" cx="128" cy="27" rx="4.5" ry="8"/></g>
+  </svg></div></div>
+ <p id="msg" class="script"></p>
+ <div id="fin"><h2 class="script big">YOU DID IT!</h2><p>Your birthday surprise is ready!</p><button id="revealBtn" class="btn">REVEAL MY SURPRISE</button></div>
+</section>
 
-        <div class="face face--front {% if not front %}is-missing{% endif %}" style="{% if front %}--shape: url('{{ front }}');{% endif %}">
-          {% if front %}<img src="{{ front }}" alt="Photocard, front" draggable="false" decoding="async">{% endif %}
-          <div class="fx glare"></div>
-          <div class="fx shine"></div>
-          <div class="fallback">front image not found</div>
-        </div>
+<section id="s3" class="stage">
+ <header class="hero"><div class="fls"></div>
+  <h1 id="heroT" class="script big"></h1><p id="heroP"></p>
+  <button id="scrollBtn" class="btn ghost">Scroll to explore ⌄</button></header>
+ <section class="sec" id="gal"><h2 class="script">Our Memories</h2><div id="gallery"></div></section>
+ <section class="sec"><h2 class="script">Birthday Wishes</h2><div class="paper rv" id="wishes"></div></section>
+ <section class="sec"><h2 class="script">One last thing...</h2>
+  <div class="env" id="env"><div class="back"></div><div class="letter"><div class="paper" id="last"></div></div><div class="front"></div><div class="flap"></div><i class="seal">♥</i></div>
+  <p class="tip">tap the envelope</p></section>
+ <footer class="sec" id="final"><h2 class="script big">Once again, Happy Birthday!</h2><p>May your next chapter be even more beautiful.</p><br><button id="replay" class="btn">Replay the Surprise</button></footer>
+</section>
 
-        <div class="face face--back {% if not back %}is-missing{% endif %}" style="{% if back %}--shape: url('{{ back }}');{% elif front %}--shape: url('{{ front }}');{% endif %}">
-          {% if back %}<img src="{{ back }}" alt="Photocard, back" draggable="false" decoding="async">{% endif %}
-          <div class="day-counter" id="day-counter" aria-hidden="true">
-            <span class="day-counter__line">Bạn đã bên</span>
-            <span class="day-counter__brand">ENHYPEN</span>
-            <span class="day-counter__line">được</span>
-            <span class="day-counter__number" id="day-count">0</span>
-            <span class="day-counter__line">ngày rồi</span>
-          </div>
-          <div class="fx glare"></div>
-          <div class="fx shine"></div>
-          <div class="fallback">back image not found</div>
-        </div>
-      </div>
-    </div>
-
-    <p class="toast" id="toast" role="status" aria-live="polite"></p>
-
-    <footer class="ui">
-      <div class="controls">
-        <button class="btn" id="btn-flip" type="button" aria-label="Flip card" title="Flip">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></svg>
-        </button>
-        <button class="btn" id="btn-reset" type="button" aria-label="Reset view" title="Reset">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5M4.5 4.5v4h4"/></svg>
-        </button>
-        <button class="btn" id="btn-motion" type="button" aria-label="Motion" aria-pressed="false" title="Motion">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 9.5v5M20 9.5v5"/></svg>
-        </button>
-      </div>
-      <p class="hint" id="hint">Drag to rotate · Double click to reset</p>
-    </footer>
-  </main>
-
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
-</html>
+<div id="lb"><img id="lbImg" alt=""><p id="lbCap" class="script"></p></div>
+<script src="static/js/config.js"></script><script src="static/js/animations.js"></script><script src="static/js/gallery.js"></script><script src="static/js/cake.js"></script><script src="static/js/main.js"></script>
+</body></html>

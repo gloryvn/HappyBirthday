@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Happy Birthday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css"></head><body>
+<div id="stars"></div><canvas id="fx"></canvas>
+<button id="snd" aria-label="Music on/off">🔊</button>
+
+<section id="s1" class="stage on"><div class="fls"></div>
+ <h1 id="t1" class="script"></h1>
+ <div class="gift" id="gift"><i class="glow"></i><b class="box"></b><b class="lid"></b></div>
+ <p id="t2" class="script sub">I have something special for you!</p>
+ <button id="openBtn" class="btn">Open Your Surprise</button>
+</section>
+
+<section id="s2" class="stage">
+ <h2 class="script big">Happy Birthday!</h2>
+ <p>Make a wish and tap the cake!</p>
+ <div class="hint" id="hint"><span>TAP HERE</span><b>⬇</b></div>
+ <div id="cakeWrap"><div id="cake" role="button" tabindex="0" aria-label="Tap the cake">
+  <svg viewBox="0 10 220 220" xmlns="http://www.w3.org/2000/svg">
+   <ellipse cx="110" cy="212" rx="104" ry="14" fill="#fff" stroke="#e6c27a" stroke-width="3"/>
+   <rect x="20" y="150" width="180" height="60" rx="14" fill="#ffb8cc"/>
+   <rect x="45" y="100" width="130" height="52" rx="12" fill="#ffe6cf"/>
+   <rect x="70" y="56" width="80" height="44" rx="11" fill="#ff9fba"/>
+   <g id="deco"></g>
+   <g fill="#fff"><rect x="89" y="34" width="6" height="22" rx="2"/><rect x="107" y="34" width="6" height="22" rx="2"/><rect x="125" y="34" width="6" height="22" rx="2"/></g>
+   <g fill="#ffd84d"><ellipse class="flame" cx="92" cy="27" rx="4.5" ry="8"/><ellipse class="flame" cx="110" cy="27" rx="4.5" ry="8"/><ellipse class="flame" cx="128" cy="27" rx="4.5" ry="8"/></g>
+  </svg></div></div>
+ <div class="count"><span id="num">0 / 50</span><div class="bar"><i id="bar"></i></div></div>
+ <p id="msg" class="script"></p>
+ <div id="fin"><h2 class="script big">YOU DID IT!</h2><p>Your birthday surprise is ready!</p><button id="revealBtn" class="btn">REVEAL MY SURPRISE</button></div>
+</section>
+
+<section id="s3" class="stage">
+ <header class="hero"><div class="fls"></div>
+  <h1 id="heroT" class="script big"></h1><p id="heroP"></p>
+  <button id="scrollBtn" class="btn ghost">Scroll to explore ⌄</button></header>
+ <section class="sec" id="gal"><h2 class="script">Our Memories</h2><div id="gallery"></div></section>
+ <section class="sec"><h2 class="script">Birthday Wishes</h2><div class="paper rv" id="wishes"></div></section>
+ <section class="sec"><h2 class="script">One last thing...</h2>
+  <div class="env" id="env"><div class="back"></div><div class="letter"><div class="paper" id="last"></div></div><div class="front"></div><div class="flap"></div><i class="seal">♥</i></div>
+  <p class="tip">tap the envelope</p></section>
+ <footer class="sec" id="final"><h2 class="script big">Once again, Happy Birthday!</h2><p>May your next chapter be even more beautiful.</p><br><button id="replay" class="btn">Replay the Surprise</button></footer>
+</section>
+
+<div id="lb"><img id="lbImg" alt=""><p id="lbCap" class="script"></p></div>
+<script src="js/config.js"></script><script src="js/animations.js"></script><script src="js/gallery.js"></script><script src="js/cake.js"></script><script src="js/main.js"></script>
+</body></html>
